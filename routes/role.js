@@ -18,15 +18,28 @@ role.get('/', (req, res) => {
          return;
       }
       res.json({
-        message: 'success',
+        message: 'GET from role was a success',
         data: rows
       });
     });
 });
 
 // POST Route for adding new role
-role.post('/', (req, res) => {
+role.post('/', ({ body }, res) => {
+    const sql = `INSERT INTO role (title, salary, department_id)
+    VALUES (?,?,?)`;
+    const params = [ body[0].title, body[0].salary, body[0].department_id ];
 
+    db.query(sql, params, (err, result) => {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({
+            message: 'POST to role was a success',
+            data: body
+        });
+    });
 });
 
 module.exports = role;

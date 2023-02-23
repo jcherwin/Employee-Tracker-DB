@@ -25,15 +25,28 @@ employee.get('/', (req, res) => {
          return;
       }
       res.json({
-        message: 'success',
+        message: 'GET from employee was a success',
         data: rows
       });
     });
 });
 
 // POST Route for adding new employee
-employee.post('/', (req, res) => {
+employee.post('/', ({ body }, res) => {
+    const sql = `INSERT INTO employee (first_name, last_name, role_id, manager_id)
+    VALUES (?, ?, ?, ?)`;
+    const params = [ body[0].first_name, body[0].last_name, body[0].role_id, body[0].manager_id ];
 
+    db.query(sql, params, (err, result) => {
+        if (err) {
+            res.status(400).json({ error: err.message });
+            return;
+        }
+        res.json({
+            message: 'POST to employee was a success',
+            data: body
+        });
+    });
 });
 
 module.exports = employee;

@@ -111,11 +111,22 @@ let updateEmployeeRoleQuestions = [
 ]
 
 // Get a list of departments from the server
-const getRequest = (param) => 
-    axios({
+const getRequest = async (param) => 
+    await axios({
         method: 'get',
         url: `/api/${param}`,
         baseURL: 'http://localhost:3001',
+        responseType: 'application/json'
+    })
+    .then((response) => { return JSON.parse(response.data) })
+    .catch((error) => { console.error('Error:', error) });
+
+const postRequest = async (param,content) => 
+    await axios({
+        method: 'post',
+        url: `/api/${param}`,
+        baseURL: 'http://localhost:3001',
+        body: content,
         responseType: 'application/json'
     })
     .then((response) => { return JSON.parse(response.data) })
@@ -125,8 +136,9 @@ const getRequest = (param) =>
 async function inquirerTemplate(questions,func) {
     await inquirer
     .prompt(questions)
-    .then((choice) => {  
-        console.log(choice)
+    .then((answers) => {  
+        console.log(answers);
+        func();
         //call function to POST new data to database
         //mainPrompt();
     })
@@ -188,12 +200,18 @@ function askSecondaryQuestion(questions) {
         case 'add-role':
             addRoleQuestions[2].choices = [];
 
-            getRequest('departments').then((res) => { 
+            getRequest('departments')
+            .then((res) => { 
                 res.data.forEach((department) => {
                     addRoleQuestions[2].choices
                     .push(department.name);
                 });
-            }).then(() => { inquirerTemplate(addRoleQuestions); });
+            }).then(() => { 
+                inquirerTemplate(addRoleQuestions, function(){
+                    console.log("This is a test");
+                    postRequest('roles',answers);
+                })
+            });
             break;
 
         case 'add-department':
@@ -245,9 +263,9 @@ function mainPrompt() {
             secondaryPrompt(choice.main)
         }          
     
-    }); // end inquirer
+    }); 
 
-} // end function
+}
 
 // Create a function to initialize app
 function init() {
