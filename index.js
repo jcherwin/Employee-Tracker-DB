@@ -1,5 +1,6 @@
 const inquirer = require('inquirer');
 const cTable = require('console.table');
+const axios = require('axios');
 
 let splashText = [
     `
@@ -124,6 +125,18 @@ let updateEmployeeRoleQuestions = [
     },
 ]
 
+// Get a list of departments from the server
+const getRequest = (param) => 
+    axios({
+        method: 'get',
+        url: `/api/${param}`,
+        baseURL: 'http://localhost:3001',
+        responseType: 'application/json'
+    })
+    .then((response) => { return JSON.parse(response.data) })
+    .catch((error) => { console.error('Error:', error) });
+
+
 function inquirerTemplate(questions,func) {
 
     inquirer
@@ -140,12 +153,30 @@ function secondaryPrompt(choice) {
     switch(choice){
         case 'View All Employees':
             //function that does a query route to get employees
+            getRequest('employees')
+            .then((res) => {
+                console.log('\n'); //Adds extra space above table
+                console.table(res.data);
+             })
+            .then(() => { mainPrompt() }) 
             break;
         case 'View All Roles':
             //function that does a query route to get roles
+            getRequest('roles')
+            .then((res) => {
+                console.log('\n'); //Adds extra space above table
+                console.table(res.data);
+             })
+            .then(() => { mainPrompt() })  
             break;
         case 'View All Departments':
             //function that does a query route to get departments
+            getRequest('departments')
+            .then((res) => {
+                console.log('\n'); //Adds extra space above table
+                console.table(res.data);
+             })
+            .then(() => { mainPrompt() })            
             break;
         case 'Add Employee':
             inquirerTemplate(addEmployeeQuestions) //add function to call that posts new data to employee table

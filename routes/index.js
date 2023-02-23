@@ -7,8 +7,8 @@ const departmentRouter = require('./department');
 
 const app = express();
 
-app.use('/employee', employeeRouter);
-app.use('/role', roleRouter);
-app.use('/department', departmentRouter);
+app.use('/employees', employeeRouter);
+app.use('/roles', roleRouter);
+app.use('/departments', departmentRouter);
 
 module.exports = app;
