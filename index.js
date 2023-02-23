@@ -1,4 +1,28 @@
 const inquirer = require('inquirer');
+const cTable = require('console.table');
+
+let splashText = [
+    `
+    ,-----------------------------------------------------------.
+    |                                                           |
+    |       _____                _                              |
+    |      |  ___|              | |                             |
+    |      | |__ _ __ ___  _ __ | | ___  _   _  ___  ___        |
+    |      |  __| '_ \` _ \\| '_ \\| |/ _ \\| | | |/ _ \\/ _ \\       |
+    |      | |__| | | | | | |_) | | (_) | |_| |  __/  __/       |
+    |      \\____/_| |_| |_| .__/|_|\\___/ \\__, |\\___|\\___|       |
+    |                     |_|            |___/                  |
+    |      ___  ___                                             |
+    |      |  \\/  |                                             |
+    |      | .  . | __ _ _ __   __ _  __ _  ___ _ __            |
+    |      | |\\/| |/ _\` | '_ \\ / _\` |/ _\` |/ _ \\ '__|           |
+    |      | |  | | (_| | | | | (_| | (_| |  __/ |              |
+    |      \\_|  |_/\\__,_|_| |_|\\__,_|\\__, |\\___|_|              |
+    |                                |___/                      |
+    |                                                           |
+    \`----------------------------------------------------------'
+    `
+]
 
 let mainQuestions = [
     {
@@ -42,6 +66,7 @@ let addRoleQuestions = [
         name: 'add_role_department_id',
         message: 'What department does the role belong to?',
         choices: [
+            'Finance'
             //Add these in dynamically
         ] 
     },
@@ -63,6 +88,7 @@ let addEmployeeQuestions = [
         name: 'add_employee_role_id',
         message: 'What is the employee\'s role?',
         choices: [
+            'Assistant Engineer'
             //Add these in dynamically
         ] 
     },
@@ -71,6 +97,7 @@ let addEmployeeQuestions = [
         name: 'add_employee_manager_id',
         message: 'Who is the employee\'s manager?',
         choices: [
+            'Jim Smith'
             //Add these in dynamically
         ] 
     },
@@ -82,6 +109,7 @@ let updateEmployeeRoleQuestions = [
         name: 'update_employee',
         message: 'Which employee\'s role do you want to update?',
         choices: [
+            'John Doe'
             //Add these in dynamically
         ] 
     },
@@ -90,77 +118,77 @@ let updateEmployeeRoleQuestions = [
         name: 'update_employee_role_id',
         message: 'Which role do you want to assign to the selected employee?',
         choices: [
+            'Sales Manager'
             //Add these in dynamically
         ] 
     },
 ]
 
-// Takes the generated questions and asks them through the inquirer module
-function employeePrompt(e) {
+function inquirerTemplate(questions,func) {
 
-    //Set up a promise that wait to get the questions back before passing them into inquirer
-    const ask = new Promise((res, rej) => {
-        let questions = employeeQuestions(e);
-        res(questions);
+    inquirer
+    .prompt(questions)
+    .then((choice) => {  
+        console.log(choice)
+        mainPrompt();
     });
 
-    ask
-    .then((questions) => {
+}
 
-        inquirer
-        .prompt(questions)
-        .then((answers) => {
+function secondaryPrompt(choice) {
 
-            // Object that destructures the returned answer object to be passed elsewhere
-            const prompt =  {
-                name: answers.name,
-                id: answers.id,
-                email: answers.email,
-                officeNumber: answers.officeNumber,
-                github: answers.github,
-                school: answers.school,
-            }
+    switch(choice){
+        case 'View All Employees':
+            //function that does a query route to get employees
+            break;
+        case 'View All Roles':
+            //function that does a query route to get roles
+            break;
+        case 'View All Departments':
+            //function that does a query route to get departments
+            break;
+        case 'Add Employee':
+            inquirerTemplate(addEmployeeQuestions) //add function to call that posts new data to employee table
+            break;
+        case 'Add Role':
+            inquirerTemplate(addRoleQuestions) //add function to call that posts new data to role table
+            break;
+        case 'Add Department':
+            inquirerTemplate(addDepartmentQuestions) //add function to call that posts new data to department table
+            break;
+        case 'Update Employee Role':
+            inquirerTemplate(updateEmployeeRoleQuestions) //add function to call that queries employees and roles and then posts new data to employee table
+            break;
+    }
 
-            // Sets employee equal to an class object with the relavent information
-            let employee = pickEmployee(e, prompt);
+}
 
-            // Each time a set of questions is asked, the new class object is passed to an array
-            employeeList.push(employee);
+// Takes the generated questions and asks them through the inquirer module
+function mainPrompt() {
 
-            // Check to see if user wants to continue entering team members, if YES then a new set of appropriate questions is asked
-            // if NO, then the recursive loop is exited and the array of class objects is passed to the generateHTML function which
-            // prints all the gathered info out to an HTML file
-            if(answers.continue != 'Finish building my team'){
-                employeePrompt(answers.continue);
-            }else{
-                console.log("All employees entered!");
+    inquirer
+    .prompt(mainQuestions)
+    .then((choice) => {        
 
-                const htmlText = html.generateHTML(employeeList);
-                writeToFile(htmlFilePath, htmlText);
-            }            
-        
-        }); // end inquirer
+        if(choice.main === 'Quit'){
+            console.log("Exiting program");
+            process.exit();
+        }else{
+            //console.log(choice);
+            //All choice logic goes here
 
-    }); // end ask
+            secondaryPrompt(choice.main)
+        }          
+    
+    }); // end inquirer
 
 } // end function
-
-// Create a function to write HTML file
-function writeToFile(fileName, data) {
-    fs.writeFile(fileName, data, (err) => {
-        if (err) {
-            console.error(err)
-        } else {
-            console.log('Success: HTML File Generated!')
-        }
-    });
-}
 
 // Create a function to initialize app
 function init() {
 
-    // Call the employeePrompt function with the string 'Manager' to initialize it, because Manager is the first employee asked for
-    employeePrompt('Manager');
+    console.log(splashText[0]);
+    mainPrompt();
 
 }
 
