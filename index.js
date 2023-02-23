@@ -66,10 +66,7 @@ let addRoleQuestions = [
         type: 'list',
         name: 'add_role_department_id',
         message: 'What department does the role belong to?',
-        choices: [
-            'Finance'
-            //Add these in dynamically
-        ] 
+        choices: [/*Add these in dynamically*/] 
     },
 ]
 
@@ -88,40 +85,28 @@ let addEmployeeQuestions = [
         type: 'list',
         name: 'add_employee_role_id',
         message: 'What is the employee\'s role?',
-        choices: [
-            'Assistant Engineer'
-            //Add these in dynamically
-        ] 
+        choices: [/*Add these in dynamically*/] 
     },
     {
         type: 'list',
         name: 'add_employee_manager_id',
         message: 'Who is the employee\'s manager?',
-        choices: [
-            'Jim Smith'
-            //Add these in dynamically
-        ] 
+        choices: [/*Add these in dynamically*/] 
     },
 ]
 
 let updateEmployeeRoleQuestions = [
     {
         type: 'list',
-        name: 'update_employee',
+        name: 'update_employee_name',
         message: 'Which employee\'s role do you want to update?',
-        choices: [
-            'John Doe'
-            //Add these in dynamically
-        ] 
+        choices: [/*Add these in dynamically*/] 
     },
     {
         type: 'list',
         name: 'update_employee_role_id',
         message: 'Which role do you want to assign to the selected employee?',
-        choices: [
-            'Sales Manager'
-            //Add these in dynamically
-        ] 
+        choices: [/*Add these in dynamically*/] 
     },
 ]
 
@@ -136,15 +121,85 @@ const getRequest = (param) =>
     .then((response) => { return JSON.parse(response.data) })
     .catch((error) => { console.error('Error:', error) });
 
-
-function inquirerTemplate(questions,func) {
-
-    inquirer
+//Abstracted inquirer prompt to handle secondary questions
+async function inquirerTemplate(questions,func) {
+    await inquirer
     .prompt(questions)
     .then((choice) => {  
         console.log(choice)
-        mainPrompt();
-    });
+        //call function to POST new data to database
+        //mainPrompt();
+    })
+    .then(() => { mainPrompt() })
+}
+
+//Calls query route to get table and then prints the table to console
+function printTable(tName) {
+    getRequest(tName)
+    .then((res) => {
+        console.log('\n'); //Adds extra space above table
+        console.table(res.data);
+     })
+    .then(() => { mainPrompt() }) //calls main prompt after table has been printed
+}
+
+//Dynamically updates choices from database for questions that need it
+function askSecondaryQuestion(questions) {
+
+    switch(questions){
+        case 'add-employee':
+            //flush choices for good measure
+            addEmployeeQuestions[2].choices = [];
+            addEmployeeQuestions[3].choices = [];
+
+            getRequest('roles').then((res) => { 
+                res.data.forEach((role) => {
+                    //add them to question's choices array
+                    addEmployeeQuestions[2].choices
+                    .push(role.title);
+                });
+            });
+            getRequest('employees').then((res) => { 
+                res.data.forEach((employee) => {
+                    addEmployeeQuestions[3].choices
+                    .push(`${employee.first_name} ${employee.last_name}`);
+                });
+            }).then(() => { inquirerTemplate(addEmployeeQuestions) });
+            break;
+
+        case 'update-employee':
+            updateEmployeeRoleQuestions[0].choices = [];
+            updateEmployeeRoleQuestions[1].choices = [];
+
+            getRequest('employees').then((res) => { 
+                res.data.forEach((employee) => {
+                    updateEmployeeRoleQuestions[0].choices
+                    .push(`${employee.first_name} ${employee.last_name}`);                    
+                });
+            });
+            getRequest('roles').then((res) => { 
+                res.data.forEach((role) => {
+                    updateEmployeeRoleQuestions[1].choices
+                    .push(role.title);
+                });
+            }).then(() => { inquirerTemplate(updateEmployeeRoleQuestions); });
+            break;
+
+        case 'add-role':
+            addRoleQuestions[2].choices = [];
+
+            getRequest('departments').then((res) => { 
+                res.data.forEach((department) => {
+                    addRoleQuestions[2].choices
+                    .push(department.name);
+                });
+            }).then(() => { inquirerTemplate(addRoleQuestions); });
+            break;
+
+        case 'add-department':
+            inquirerTemplate(addDepartmentQuestions);
+            break;
+    }
 
 }
 
@@ -152,43 +207,25 @@ function secondaryPrompt(choice) {
 
     switch(choice){
         case 'View All Employees':
-            //function that does a query route to get employees
-            getRequest('employees')
-            .then((res) => {
-                console.log('\n'); //Adds extra space above table
-                console.table(res.data);
-             })
-            .then(() => { mainPrompt() }) 
-            break;
-        case 'View All Roles':
-            //function that does a query route to get roles
-            getRequest('roles')
-            .then((res) => {
-                console.log('\n'); //Adds extra space above table
-                console.table(res.data);
-             })
-            .then(() => { mainPrompt() })  
-            break;
-        case 'View All Departments':
-            //function that does a query route to get departments
-            getRequest('departments')
-            .then((res) => {
-                console.log('\n'); //Adds extra space above table
-                console.table(res.data);
-             })
-            .then(() => { mainPrompt() })            
+            printTable('employees'); //print results from db query  
             break;
         case 'Add Employee':
-            inquirerTemplate(addEmployeeQuestions) //add function to call that posts new data to employee table
-            break;
-        case 'Add Role':
-            inquirerTemplate(addRoleQuestions) //add function to call that posts new data to role table
-            break;
-        case 'Add Department':
-            inquirerTemplate(addDepartmentQuestions) //add function to call that posts new data to department table
+            askSecondaryQuestion('add-employee'); //updates choices in question and then runs inquirer for the prompt         
             break;
         case 'Update Employee Role':
-            inquirerTemplate(updateEmployeeRoleQuestions) //add function to call that queries employees and roles and then posts new data to employee table
+            askSecondaryQuestion('update-employee');            
+            break;
+        case 'View All Roles':            
+            printTable('roles'); 
+            break;
+        case 'Add Role':            
+            askSecondaryQuestion('add-role');    
+            break;
+        case 'View All Departments':            
+            printTable('departments');
+            break;
+        case 'Add Department':
+            askSecondaryQuestion('add-department');            
             break;
     }
 
@@ -205,9 +242,6 @@ function mainPrompt() {
             console.log("Exiting program");
             process.exit();
         }else{
-            //console.log(choice);
-            //All choice logic goes here
-
             secondaryPrompt(choice.main)
         }          
     
