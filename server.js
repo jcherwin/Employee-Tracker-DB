@@ -1,16 +1,15 @@
 const express = require('express');
-// Import and require mysql2
-//const mysql = require('mysql2');
-const api = require('./routes/index.js');
+const routes = require('./routes');
 
-const PORT = process.env.PORT || 3001;
 const app = express();
+const PORT = process.env.PORT || 3001;
 
 // Express middleware
-app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
-app.use('/api', api);
+// Turn on routes
+app.use(routes);
 
 // Default response for any other request (Not Found)
 app.use((req, res) => {

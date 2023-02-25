@@ -1,8 +1,8 @@
-const employee = require('express').Router();
-const db = require('./dbConnection');
+const router = require('express').Router();
+const db = require('../../config/dbConnection');
 
 // GET Route for retrieving employees from database
-employee.get('/', (req, res) => {
+router.get('/', (req, res) => {
     const sql = `SELECT 
     employee.id AS id,
     employee.first_name AS first_name,
@@ -17,7 +17,7 @@ employee.get('/', (req, res) => {
     LEFT JOIN department
     ON role.department_id = department.id
     LEFT JOIN employee e2
-    ON employee.manager_id = e2.id;`;
+    ON employee.manager_id = e2.id`;
   
     db.query(sql, (err, rows) => {
       if (err) {
@@ -31,11 +31,29 @@ employee.get('/', (req, res) => {
     });
 });
 
+router.get('/full-name', (req, res) => {
+  const sql = `SELECT
+  employee.id AS id,
+  CONCAT(employee.first_name, ' ', employee.last_name) AS full_name
+  FROM employee`;
+
+  db.query(sql, (err, rows) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+       return;
+    }
+    res.json({
+      message: 'GET from employee was a success',
+      data: rows
+    });
+  });
+});
+
 // POST Route for adding new employee
-employee.post('/', ({ body }, res) => {
+router.post('/', ({ body }, res) => {
     const sql = `INSERT INTO employee (first_name, last_name, role_id, manager_id)
     VALUES (?, ?, ?, ?)`;
-    const params = [ body[0].first_name, body[0].last_name, body[0].role_id, body[0].manager_id ];
+    const params = [ body.first_name, body.last_name, body.role_id, body.manager_id ];
 
     db.query(sql, params, (err, result) => {
         if (err) {
@@ -49,4 +67,4 @@ employee.post('/', ({ body }, res) => {
     });
 });
 
-module.exports = employee;
+module.exports = router;

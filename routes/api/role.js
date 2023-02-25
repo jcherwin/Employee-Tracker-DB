@@ -1,8 +1,8 @@
-const role = require('express').Router();
-const db = require('./dbConnection');
+const router = require('express').Router();
+const db = require('../../config/dbConnection');
 
 // GET Route for retrieving roles from database
-role.get('/', (req, res) => {
+router.get('/', (req, res) => {
     const sql = `SELECT
     role.id AS id,
     role.title AS title,
@@ -25,10 +25,13 @@ role.get('/', (req, res) => {
 });
 
 // POST Route for adding new role
-role.post('/', ({ body }, res) => {
+router.post('/', ({ body }, res) => {
     const sql = `INSERT INTO role (title, salary, department_id)
     VALUES (?,?,?)`;
-    const params = [ body[0].title, body[0].salary, body[0].department_id ];
+    const params = [ body.title, body.salary, body.department_id ];
+
+    console.log(body);
+    console.log(params);
 
     db.query(sql, params, (err, result) => {
         if (err) {
@@ -42,4 +45,4 @@ role.post('/', ({ body }, res) => {
     });
 });
 
-module.exports = role;
+module.exports = router;
