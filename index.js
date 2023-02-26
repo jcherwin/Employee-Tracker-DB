@@ -109,7 +109,7 @@ let addEmployeeQuestions = [
 let updateEmployeeRoleQuestions = [
     {
         type: 'list',
-        name: 'update_employee_name',
+        name: 'full_name',
         message: 'Which employee\'s role do you want to update?',
         choices: [/*Add these in dynamically*/] 
     },
@@ -185,96 +185,111 @@ async function updateQuestionChoices(tName, key, array) {
     data.forEach((item) => { array.push(item[key]) });
 }
 
+function clearQuestionChoices(){
+    addEmployeeQuestions[2].choices = [];
+    addEmployeeQuestions[3].choices = [];
+    updateEmployeeRoleQuestions[0].choices = [];
+    updateEmployeeRoleQuestions[1].choices = [];
+    addRoleQuestions[2].choices = [];
+}
+
 // Sanitized answers from inquirer to match correct data type to be sent to db
-async function sanitizeForDb(tName, answers) {
-    
-    switch(tName){ //Employee and Role are the only tables that need sanitized values
-        case TABLE_ROLE:
-            departmentData.forEach((department) => {
-                if(answers.department_id == department.name){ answers.department_id = department.id }
-            });
-            break;
-        case TABLE_EMPLOYEE:
-            roleData.forEach((role) => {
-                if(answers.role_id == role.title){ answers.role_id = role.id }
-            });
-            employeeData.forEach((employee) => {
-                if(answers.manager_id == employee.full_name){ answers.manager_id = employee.id }
-            });
-            break;
-        default:
-            break;
+async function sanitizeForDb(type, tName, answers) {
+    if(type == 'post'){
+        switch(tName){ //Employee and Role are the only tables that need sanitized values
+            case TABLE_ROLE:
+                departmentData.forEach((department) => {
+                    if(answers.department_id == department.name){ answers.department_id = department.id }
+                });
+                break;
+            case TABLE_EMPLOYEE:
+                roleData.forEach((role) => {
+                    if(answers.role_id == role.title){ answers.role_id = role.id }
+                });
+                employeeData.forEach((employee) => {
+                    if(answers.manager_id == employee.full_name){ answers.manager_id = employee.id }
+                });
+                break;
+            default: break;
+        }
+    }else if(type == 'put'){
+        switch(tName){
+            case TABLE_EMPLOYEE:
+                employeeData.forEach((employee) => {
+                    if(answers.full_name == employee.full_name){ answers.id = employee.id }
+                });
+                roleData.forEach((role) => {
+                    if(answers.role_id == role.title){ answers.role_id = role.id }
+                });
+                break;
+            default: break;   
+        }
     }
+    
 
     return answers;
 }
 
 // Accepts table name and answers from inquirer to be sanitized and then sent to db, then prints result
-async function postAnswersToDb(tName, answers) {
-    answers =  await sanitizeForDb(tName, answers);
-    dbRequest('post', tName, answers);
-    switch(tName) {
-        case TABLE_DEPARTMENT:
-            console.log(`Added ${answers.name} to the database`); break;
-        case TABLE_ROLE:
-            console.log(`Added ${answers.title} to the database`); break;
-        case TABLE_EMPLOYEE:
-            console.log(`Added ${answers.first_name} ${answers.last_name} to the database`); break;
+async function sendAnswersToDb(type, tName, answers) {
+    answers =  await sanitizeForDb(type, tName, answers);
+    //console.log(answers);
+    
+    if(type == 'post'){
+        dbRequest(type, tName, answers);
+
+        switch(tName) {
+            case TABLE_DEPARTMENT:
+                console.log(`Added ${answers.name} to the database`); break;
+            case TABLE_ROLE:
+                console.log(`Added ${answers.title} to the database`); break;
+            case TABLE_EMPLOYEE:
+                console.log(`Added ${answers.first_name} ${answers.last_name} to the database`); break;
+        }
+    }else if(type == 'put'){       
+
+        switch(tName) {
+            case TABLE_EMPLOYEE:
+                let route = `${TABLE_EMPLOYEE}/${answers.id}`;
+                dbRequest(type, route, answers);
+                console.log(`Updated employee's role`); break;
+        }
     }
 }
 
 //Dynamically updates choices from database for questions that need it
 async function askSecondaryQuestion(questions) {
+    clearQuestionChoices();
 
     switch(questions){
         case 'add-employee':
-
             //Dynamically updates question choices from db data
             await updateQuestionChoices(TABLE_ROLE, 'title', addEmployeeQuestions[2].choices);
             await updateQuestionChoices(TABLE_EMPLOYEE_FULLNAME, 'full_name', addEmployeeQuestions[3].choices);
-            //console.log("Choice function return");
-            //console.log(addEmployeeQuestions);
-            //console.log(departmentData);
-            //console.log(roleData);
-            //console.log(employeeData);
 
             //Retrieve answers from inquirer prompt
             answers = await inquirerTemplate(addEmployeeQuestions);
-            //console.log("Inquirer return");
-            //console.log(answers);
 
             //Send answers to the database and log that its been done
-            await postAnswersToDb(TABLE_EMPLOYEE, answers);
-
+            await sendAnswersToDb('post', TABLE_EMPLOYEE, answers);
             break;
-        /*
-        case 'update-employee':
-            updateEmployeeRoleQuestions[0].choices = [];
-            updateEmployeeRoleQuestions[1].choices = [];
-
-            getRequest('employees').then((res) => { 
-                res.data.forEach((employee) => {
-                    updateEmployeeRoleQuestions[0].choices
-                    .push(`${employee.first_name} ${employee.last_name}`);                    
-                });
-            });
-            getRequest('roles').then((res) => { 
-                res.data.forEach((role) => {
-                    updateEmployeeRoleQuestions[1].choices
-                    .push(role.title);
-                });
-            }).then(() => { inquirerTemplate(updateEmployeeRoleQuestions); });
-            break;*/
+        
+        case 'update-employee': 
+            await updateQuestionChoices(TABLE_EMPLOYEE_FULLNAME, 'full_name', updateEmployeeRoleQuestions[0].choices);
+            await updateQuestionChoices(TABLE_ROLE, 'title', updateEmployeeRoleQuestions[1].choices);
+            answers = await inquirerTemplate(updateEmployeeRoleQuestions);
+            await sendAnswersToDb('put', TABLE_EMPLOYEE, answers);
+            break;
 
         case 'add-role':           
             await updateQuestionChoices(TABLE_DEPARTMENT_SORTED, 'name', addRoleQuestions[2].choices);
             answers = await inquirerTemplate(addRoleQuestions);
-            await postAnswersToDb(TABLE_ROLE, answers);
+            await sendAnswersToDb('post', TABLE_ROLE, answers);
             break;
 
         case 'add-department':
             answers = await inquirerTemplate(addDepartmentQuestions);
-            await postAnswersToDb(TABLE_DEPARTMENT, answers);
+            await sendAnswersToDb('post', TABLE_DEPARTMENT, answers);
             break;
     }
 
@@ -308,13 +323,13 @@ function mainPrompt() {
 
             switch(choice.main){
                 case 'View All Employees':
-                    printTable(TABLE_EMPLOYEE); //print results from db query  
-                    break;
+                    // Print results from db query
+                    printTable(TABLE_EMPLOYEE); break;                    
                 case 'Add Employee':
-                    askSecondaryQuestion('add-employee'); //updates choices in question and then runs inquirer for the prompt         
-                    break;
+                    // Updates choices in question and then runs inquirer for the prompt
+                    askSecondaryQuestion('add-employee'); break;
                 case 'Update Employee Role':
-                    //askSecondaryQuestion('update-employee'); break;
+                    askSecondaryQuestion('update-employee'); break;
                 case 'View All Roles':            
                     printTable(TABLE_ROLE); break;
                 case 'Add Role':            

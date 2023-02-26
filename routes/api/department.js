@@ -5,16 +5,21 @@ const db = require('../../config/dbConnection');
 router.get('/', (req, res) => {
     const sql = `SELECT *
     FROM department;`;
+
+    console.log("Outside"); 
   
     db.query(sql, (err, rows) => {
       if (err) {
         res.status(500).json({ error: err.message });
-         return;
+        return;
       }
-      res.json({
+      const response = {
         message: 'GET from department was a success',
         data: rows
-      });
+      }
+      res.json(response);
+      console.log(response);      
+      console.log("Inside");      
     });
 });
 
@@ -42,14 +47,14 @@ router.post('/', ({ body }, res) => {
     const params = [ body.name ];
 
     db.query(sql, params, (err, result) => {
-        if (err) {
-            res.status(400).json({ error: err.message });
-            return;
-        }
-        res.json({
-            message: 'POST to department was a success',
-            data: body
-        });
+      if (err) {
+        res.status(400).json({ error: err.message });
+        return;
+      }
+      res.json({
+        message: 'POST to department was a success',
+        data: body
+      });
     });
 });
 

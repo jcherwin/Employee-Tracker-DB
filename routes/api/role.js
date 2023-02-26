@@ -15,7 +15,7 @@ router.get('/', (req, res) => {
     db.query(sql, (err, rows) => {
       if (err) {
         res.status(500).json({ error: err.message });
-         return;
+        return;
       }
       res.json({
         message: 'GET from role was a success',
@@ -30,18 +30,15 @@ router.post('/', ({ body }, res) => {
     VALUES (?,?,?)`;
     const params = [ body.title, body.salary, body.department_id ];
 
-    console.log(body);
-    console.log(params);
-
     db.query(sql, params, (err, result) => {
-        if (err) {
-            res.status(400).json({ error: err.message });
-            return;
-        }
-        res.json({
-            message: 'POST to role was a success',
-            data: body
-        });
+      if (err) {
+        res.status(400).json({ error: err.message });
+        return;
+      }
+      res.json({
+        message: 'POST to role was a success',
+        data: body
+      });
     });
 });
 
