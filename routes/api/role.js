@@ -17,10 +17,12 @@ router.get('/', (req, res) => {
         res.status(500).json({ error: err.message });
         return;
       }
-      res.json({
+      const response = {
         message: 'GET from role was a success',
         data: rows
-      });
+      }
+      res.json(response);
+      console.log(response.message);   
     });
 });
 
@@ -35,11 +37,38 @@ router.post('/', ({ body }, res) => {
         res.status(400).json({ error: err.message });
         return;
       }
-      res.json({
+      const response = {
         message: 'POST to role was a success',
         data: body
-      });
+      }
+      res.json(response);
+      console.log(response);   
     });
+});
+
+// Delete a role
+router.delete('/delete/:id', (req, res) => {
+  const sql = `DELETE FROM role WHERE id = ?`;
+  const params = [req.params.id];
+  
+  db.query(sql, params, (err, result) => {
+    if (err) {
+      res.statusMessage(400).json({ error: res.message });
+    } else if (!result.affectedRows) {
+      res.json({
+      message: 'Role not found'
+      });
+    } else {
+      const response = {
+        message: 'DELETE from role was a success',
+        changes: result.affectedRows,
+        id: req.params.id
+      }
+      res.json(response);
+      console.log(response);
+    }
+  });
+
 });
 
 module.exports = router;
