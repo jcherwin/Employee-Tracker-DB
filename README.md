@@ -44,6 +44,7 @@ Finally, you can run the main program by running the following command in the ro
 node index.js
 ```
 <br>
-Here is an external link to the following video []()
+Here is an external link to the following video [https://drive.google.com/file/d/1mZqUVVOrCrx_K51o1LSOMN6gB5FARAZv/view](https://drive.google.com/file/d/1mZqUVVOrCrx_K51o1LSOMN6gB5FARAZv/view)
 <br>
 Here is a video demonstrating how the program should run:
+https://user-images.githubusercontent.com/117125528/221761274-1ba966a4-f3f0-44a3-a6de-17bd624af984.mp4
